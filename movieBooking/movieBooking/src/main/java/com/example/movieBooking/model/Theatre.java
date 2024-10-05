@@ -1,5 +1,6 @@
 package com.example.movieBooking.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -18,6 +19,7 @@ public class Theatre {
 
     private String address;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "theatre")
     private List<Show> shows;
 }

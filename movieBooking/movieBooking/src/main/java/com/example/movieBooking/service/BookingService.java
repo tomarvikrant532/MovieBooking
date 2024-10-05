@@ -4,11 +4,14 @@ import com.example.movieBooking.model.Booking;
 import com.example.movieBooking.model.BookingRequest;
 import com.example.movieBooking.model.Theatre;
 import com.example.movieBooking.repository.BookingRepository;
+import com.example.movieBooking.repository.MovieRepository;
 import com.example.movieBooking.repository.TheatreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -20,76 +23,58 @@ public class BookingService {
     @Autowired
     private TheatreRepository theatreRepository;
 
-    public Booking bookTicket(BookingRequest bookingRequest) {
-        Theatre theatre = theatreRepository.findById(bookingRequest.getTheatreId()).orElseThrow();
-        Booking booking = new Booking();
-        booking.setTheatre(theatre);
-        booking.setMovie(bookingRequest.getMovie());
-        booking.setShowTime(bookingRequest.getShowTime());
-        booking.setSeatNumber(bookingRequest.getSeatNumber());
-        Double price = bookingRequest.getPrice();
-        if (bookingRequest.getNumberOfTickets() >= 3) {
-            price = price * 0.5;
-        }
-        booking.setPrice(price);
-        return bookingRepository.save(booking);
-    }
 
-    public Booking bookTicketWithDiscount(BookingRequest bookingRequest) {
-        Theatre theatre = theatreRepository.findById(bookingRequest.getTheatreId()).orElseThrow();
-        Booking booking = new Booking();
-        booking.setTheatre(theatre);
-        booking.setMovie(bookingRequest.getMovie());
-        booking.setShowTime(bookingRequest.getShowTime());
-        booking.setSeatNumber(bookingRequest.getSeatNumber());
-        Double price = bookingRequest.getPrice();
-        if (bookingRequest.getNumberOfTickets() >= 3) {
-            price = price * 0.5;
-        }
-        else if (bookingRequest.getShowTime().getHours() >= 12 && bookingRequest.getShowTime().getHours() < 18) {
-            price = price * 0.8;
-        }
-        booking.setPrice(price);
-        return bookingRepository.save(booking);
-    }
+    @Autowired
+    MovieRepository movieRepository;
 
-    public Booking bookTicketWithAfternoonDiscount(BookingRequest bookingRequest) {
-        Theatre theatre = theatreRepository.findById(bookingRequest.getTheatreId()).orElseThrow();
-        Booking booking = new Booking();
-        booking.setTheatre(theatre);
-        booking.setMovie(bookingRequest.getMovie());
-        booking.setShowTime(bookingRequest.getShowTime());
-        booking.setSeatNumber(bookingRequest.getSeatNumber());
-        Double price = bookingRequest.getPrice();
-        if (bookingRequest.getShowTime().getHours() >= 12 && bookingRequest.getShowTime().getHours() < 18) {
-            price = price * 0.8;
-        }
-        booking.setPrice(price);
-        return bookingRepository.save(booking);
-    }
+    public Booking bookTicket(BookingRequest bookingRequest)
+    {
+        try
+        {
+            Theatre theatre = theatreRepository.findById(bookingRequest.getTheatreId()).orElseThrow();
+            Long count = bookingRepository.countByTheatreAndShowTime(theatre, bookingRequest.getShowTime());
+            if (count >= 50) {
+                throw new RuntimeException("Seat limit reached for this show");
+            }
 
-    public Booking bookTicketWithSeatSelection(BookingRequest bookingRequest) {
-        Theatre theatre = theatreRepository.findById(bookingRequest.getTheatreId()).orElseThrow();
-        Booking booking = new Booking();
-        booking.setTheatre(theatre);
-        booking.setMovie(bookingRequest.getMovie());
-        booking.setShowTime(bookingRequest.getShowTime());
-        booking.setSeatNumber(bookingRequest.getSeatNumber());
-        booking.setPrice(bookingRequest.getPrice());
-        return bookingRepository.save(booking);
-    }
+            Booking booking = new Booking();
+            booking.setTheatre(theatre);
+            booking.setMovie(movieRepository.findById(Long.parseLong(String.valueOf(bookingRequest.getMovieId()))).orElseThrow());
+            booking.setShowTime(bookingRequest.getShowTime());
+            booking.setSeatNumber(bookingRequest.getSeatNumber());
+            int ticketCount = bookingRequest.getNumberOfTickets();
+            double price = bookingRequest.getPrice();
+            double discountedPrice = 0;
 
-    public List<Booking> bookTicketsBulk(List<BookingRequest> bookingRequests) {
-        List<Booking> bookings = new ArrayList<>();
-        for (BookingRequest bookingRequest : bookingRequests) {
-            bookings.add(bookTicket(bookingRequest));
-        }
-        return bookings;
-    }
+            for (int i = 1; i <= ticketCount; i++) {
+                if (i % 3 == 0) {
+                    discountedPrice += price * 0.5; // 50% discount on every third ticket
+                } else {
+                    discountedPrice += price;
+                }
+            }
 
-    public void cancelTicketsBulk(List<Long> bookingIds) {
-        for (Long bookingId : bookingIds) {
-            bookingRepository.deleteById(bookingId);
+            if (isAfternoon(bookingRequest.getShowTime())) {
+                discountedPrice *= 0.8; // 20% discount for afternoon tickets
+            }
+
+            booking.setNumberOfTickets(bookingRequest.getNumberOfTickets());
+            booking.setPrice(discountedPrice);
+            booking.setCustomerId(bookingRequest.getCustomerId());
+
+            return bookingRepository.save(booking);
+
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
         }
+
+    }
+    private boolean isAfternoon(Date showTime) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(showTime);
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        return hour >= 12 && hour < 17; // assuming afternoon is between 12pm and 5pm
     }
 }

@@ -22,9 +22,14 @@ public class Booking {
     @JoinColumn(name = "movie_id")
     private Movie movie;
 
+    @JoinColumn(name = "theatre_id")
     private Date showTime;
 
     private String seatNumber;
 
     private Double price;
+
+    private int customerId;
+
+    private int numberOfTickets;
 }

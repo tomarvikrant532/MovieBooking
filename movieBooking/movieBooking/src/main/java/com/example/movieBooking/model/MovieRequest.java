@@ -12,7 +12,15 @@ public class MovieRequest {
 
     private String city;
 
+    private int movieId;
+
     private String language;
 
     private String genre;
+
+    private int theaterId;
+
+    private String theaterName;
+
+    private String time;
 }

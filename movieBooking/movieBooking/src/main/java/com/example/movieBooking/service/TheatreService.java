@@ -29,8 +29,7 @@ public class TheatreService {
 
 
     @Transactional
-    public Theatre createTheatre(Theatre theatre)
-    {
+    public Theatre createTheatre(Theatre theatre) {
         return theatreRepository.saveAndFlush(theatre);
     }
 
@@ -55,23 +54,23 @@ public class TheatreService {
     }
 
     public Show createShow(Long id, ShowRequest showRequest) {
-        try
-        {
-            Theatre theatre = theatreRepository.findById(id).orElseThrow(()->new RuntimeException("Theater id not present"));
-            Movie movie = movieRepository.findById(showRequest.getMovie().getId()).orElseGet(() -> {
-                Movie newMovie = new Movie();
-                newMovie.setId(showRequest.getMovie().getId());
-                return movieRepository.save(newMovie);
-            });
+        try {
+            Theatre theatre = theatreRepository.findById(id).orElseThrow(() -> new RuntimeException("Theater id not present"));
+            Movie newMovie = new Movie();
+            newMovie.setName(showRequest.getMovie().getName());
+            newMovie.setDescription(showRequest.getMovie().getDescription());
+            newMovie.setCity(showRequest.getMovie().getCity());
+            newMovie.setLanguage(showRequest.getMovie().getLanguage());
+            newMovie.setGenre(showRequest.getMovie().getGenre());
+            movieRepository.save(newMovie);
             Show show = new Show();
             show.setTheatre(theatre);
-            show.setMovie(movie);
+            show.setMovie(newMovie);
             show.setDate(showRequest.getDate());
             show.setTime(showRequest.getTime());
             return showRepository.save(show);
 
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException();
         }

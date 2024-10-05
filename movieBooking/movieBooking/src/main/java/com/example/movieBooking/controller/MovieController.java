@@ -1,6 +1,7 @@
 package com.example.movieBooking.controller;
 
 import com.example.movieBooking.model.Movie;
+import com.example.movieBooking.model.MovieRequest;
 import com.example.movieBooking.service.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +19,7 @@ public class MovieController
     private MovieService movieService;
 
     @GetMapping
-    public List<Movie> getMovies() {
+    public List<MovieRequest> getMovies() {
         return movieService.getMovies();
     }
 
